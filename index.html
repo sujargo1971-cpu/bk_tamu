@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buku Tamu - SDN 2 Medang Sari</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Custom Scrollbar for table */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        #loadingOverlay {
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+    <!-- LOADING OVERLAY -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white/80 z-50 flex flex-col justify-center items-center hidden transition-opacity">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-3"></div>
+        <p class="text-slate-600 font-medium animate-pulse" id="loadingText">Memproses data...</p>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 relative">
+
+        <!-- ==================== VIEW 1: GUEST FORM (PUBLIC) ==================== -->
+        <section id="view-guest" class="fade-in max-w-xl mx-auto block">
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
+                <div class="bg-blue-600 p-6 sm:p-8 text-center text-white relative">
+                    <!-- Admin Login Trigger (Hidden Icon) -->
+                    <button onclick="switchView('view-login')" class="absolute top-4 right-4 text-blue-300 hover:text-white transition" title="Login Admin">
+                        <i class="bi bi-shield-lock-fill text-xl"></i>
+                    </button>
+                    
+                    <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                        <i class="bi bi-book-half text-3xl text-blue-600"></i>
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl font-bold mb-1">Buku Tamu Digital</h1>
+                    <p class="text-blue-100 text-sm sm:text-base">SD Negeri 2 Medang Sari</p>
+                </div>
+                
+                <form id="guestForm" onsubmit="submitGuestForm(event)" class="p-6 sm:p-8 space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap <span class="text-red-500">*</span></label>
+                        <input type="text" id="gNama" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Masukkan nama lengkap Anda" autofocus>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Instansi / Asal <span class="text-red-500">*</span></label>
+                        <input type="text" id="gInstansi" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Contoh: Orang Tua Siswa, Dinas, dll">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Nomor HP / WhatsApp <span class="text-red-500">*</span></label>
+                        <input type="tel" id="gNoHp" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="08xxxxxxxxxx">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Tujuan Bertemu <span class="text-red-500">*</span></label>
+                        <select id="gTujuan" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white">
+                            <option value="" disabled selected>-- Pilih Tujuan --</option>
+                            <option value="Kepala Sekolah">Bapak Sujargo, M.Pd. (Kepala Sekolah)</option>
+                            <option value="Guru Kelas">Guru / Wali Kelas</option>
+                            <option value="Tata Usaha">Staf Tata Usaha</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Keperluan <span class="text-red-500">*</span></label>
+                        <textarea id="gKeperluan" required rows="3" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition resize-none" placeholder="Jelaskan keperluan Anda secara singkat"></textarea>
+                    </div>
+                    
+                    <button type="submit" id="btnSubmit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+                        <i class="bi bi-send"></i> Simpan Kehadiran
+                    </button>
+                </form>
+            </div>
+            <p class="text-center text-slate-400 text-xs mt-6">
+                © 2026 SD Negeri 2 Medang Sari. All rights reserved.
+            </p>
+        </section>
+
+        <!-- ==================== VIEW 2: LOGIN ADMIN ==================== -->
+        <section id="view-login" class="fade-in max-w-sm mx-auto hidden pt-10">
+            <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 text-center">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="bi bi-shield-lock text-3xl text-blue-600"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Panel Admin</h2>
+                <p class="text-sm text-slate-500 mb-6">Masukkan PIN rahasia untuk mengakses rekapitulasi data tamu.</p>
+                
+                <form id="loginForm" onsubmit="processLogin(event)" class="space-y-4">
+                    <input type="password" id="adminPin" required class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-center text-2xl tracking-[0.3em]" placeholder="••••••">
+                    
+                    <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 px-4 rounded-lg transition shadow-md">
+                        Masuk Dashboard
+                    </button>
+                </form>
+                
+                <button onclick="switchView('view-guest')" class="mt-6 text-sm text-blue-600 hover:underline flex items-center justify-center w-full gap-1">
+                    <i class="bi bi-arrow-left"></i> Kembali ke Buku Tamu
+                </button>
+            </div>
+        </section>
+
+        <!-- ==================== VIEW 3: DASHBOARD ADMIN ==================== -->
+        <section id="view-admin" class="fade-in hidden">
+            <!-- Admin Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <div>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-slate-800">Dashboard Admin</h2>
+                    <p class="text-slate-500">Rekapitulasi Kunjungan SD N 2 Medang Sari</p>
+                </div>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button onclick="refreshData()" class="flex-1 sm:flex-none bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg font-medium shadow-sm transition flex items-center justify-center gap-2">
+                        <i class="bi bi-arrow-clockwise"></i> Segarkan
+                    </button>
+                    <button onclick="exportToCSV()" class="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition flex items-center justify-center gap-2">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> Export
+                    </button>
+                    <button onclick="logout()" class="flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition flex items-center justify-center gap-2" title="Keluar">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                        <i class="bi bi-people-fill text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500 font-medium">Total Tamu (Semua)</p>
+                        <h3 class="text-2xl font-bold text-slate-800" id="statTotal">0</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+                        <i class="bi bi-person-check-fill text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500 font-medium">Tamu Hari Ini</p>
+                        <h3 class="text-2xl font-bold text-slate-800" id="statToday">0</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
+                        <i class="bi bi-briefcase-fill text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500 font-medium">Kepala Sekolah</p>
+                        <h3 class="text-2xl font-bold text-slate-800" id="statKepsek">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <h3 class="font-semibold text-slate-800">Daftar Kunjungan Terbaru</h3>
+                    <div class="relative">
+                        <i class="bi bi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Cari nama atau instansi..." class="pl-9 pr-4 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none w-full sm:w-64">
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse" id="guestTable">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-600 text-sm uppercase tracking-wider">
+                                <th class="p-4 font-medium border-b border-slate-200">Waktu</th>
+                                <th class="p-4 font-medium border-b border-slate-200">Nama & Kontak</th>
+                                <th class="p-4 font-medium border-b border-slate-200">Instansi</th>
+                                <th class="p-4 font-medium border-b border-slate-200">Tujuan</th>
+                                <th class="p-4 font-medium border-b border-slate-200">Keperluan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="text-slate-700 text-sm divide-y divide-slate-100">
+                            <!-- Data baris akan dimuat via JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Empty State -->
+                <div id="emptyState" class="hidden p-8 text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
+                        <i class="bi bi-inbox text-2xl text-slate-400"></i>
+                    </div>
+                    <h4 class="text-slate-600 font-medium mb-1">Belum ada data</h4>
+                    <p class="text-slate-400 text-sm">Data tamu yang diisi akan muncul di sini.</p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- LOGIKA JAVASCRIPT -->
+    <script>
+        // ================= GLOBAL STATE =================
+        let db = { guests: [] };
+        let activeAdminPin = "";
+        
+        // Cek Environment (Real GAS vs Simulation di Gemini Canvas)
+        const isSimulation = (typeof google === 'undefined');
+        
+        // Data Dummy untuk Simulasi
+        const DUMMY_DB = {
+            guests: [
+                { ID: "GST-01", Timestamp: "28/10/2026 07:30:15", Nama: "Ahmad Jaelani", Instansi: "Dinas Pendidikan", NoHP: "08123456789", Tujuan: "Kepala Sekolah", Keperluan: "Monitoring Dana BOS" },
+                { ID: "GST-02", Timestamp: "28/10/2026 08:45:00", Nama: "Siti Rahma", Instansi: "Orang Tua Siswa", NoHP: "08567788990", Tujuan: "Guru Kelas", Keperluan: "Konsultasi perkembangan belajar anak" },
+                { ID: "GST-03", Timestamp: "27/10/2026 10:15:22", Nama: "Budi Santoso", Instansi: "Penerbit Erlangga", NoHP: "08112233445", Tujuan: "Kepala Sekolah", Keperluan: "Penawaran buku perpustakaan" }
+            ]
+        };
+        const DUMMY_PIN = "123456";
+
+        // ================= UI HELPERS =================
+        function startLoading(text = "Memproses...") {
+            document.getElementById('loadingText').innerText = text;
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+        }
+
+        function endLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+        }
+
+        function switchView(viewId) {
+            // Sembunyikan semua section
+            ['view-guest', 'view-login', 'view-admin'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+                document.getElementById(id).classList.remove('block');
+            });
+            // Tampilkan yang diminta
+            document.getElementById(viewId).classList.remove('hidden');
+            document.getElementById(viewId).classList.add('block');
+            
+            // Auto focus
+            if(viewId === 'view-guest') document.getElementById('gNama').focus();
+            if(viewId === 'view-login') document.getElementById('adminPin').focus();
+        }
+
+        function showToast(icon, title) {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+            });
+            Toast.fire({ icon: icon, title: title });
+        }
+
+        // ================= GUEST FORM LOGIC =================
+        function submitGuestForm(e) {
+            e.preventDefault();
+            
+            const btnSubmit = document.getElementById('btnSubmit');
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Menyimpan...`;
+            startLoading("Menyimpan data...");
+
+            const payload = {
+                nama: document.getElementById('gNama').value.trim(),
+                instansi: document.getElementById('gInstansi').value.trim(),
+                nohp: document.getElementById('gNoHp').value.trim(),
+                tujuan: document.getElementById('gTujuan').value,
+                keperluan: document.getElementById('gKeperluan').value.trim()
+            };
+
+            if (isSimulation) {
+                // SIMULATION MODE: Push to dummy array
+                setTimeout(() => {
+                    const today = new Date();
+                    const dd = String(today.getDate()).padStart(2, '0');
+                    const mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+                    const yyyy = today.getFullYear();
+                    const hh = String(today.getHours()).padStart(2, '0');
+                    const min = String(today.getMinutes()).padStart(2, '0');
+                    const sec = String(today.getSeconds()).padStart(2, '0');
+                    
+                    DUMMY_DB.guests.unshift({
+                        ID: "GST-SIM-" + today.getTime(),
+                        Timestamp: `${dd}/${mm}/${yyyy} ${hh}:${min}:${sec}`,
+                        Nama: payload.nama,
+                        Instansi: payload.instansi,
+                        NoHP: payload.nohp,
+                        Tujuan: payload.tujuan,
+                        Keperluan: payload.keperluan
+                    });
+
+                    successFormReset();
+                }, 1000);
+            } else {
+                // PRODUCTION MODE: Call GAS Function
+                google.script.run
+                    .withSuccessHandler((res) => {
+                        if (res.success) {
+                            successFormReset();
+                        } else {
+                            handleError(res.message);
+                        }
+                    })
+                    .withFailureHandler(handleError)
+                    .saveData(payload);
+            }
+        }
+
+        function successFormReset() {
+            endLoading();
+            document.getElementById('guestForm').reset();
+            const btnSubmit = document.getElementById('btnSubmit');
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = `<i class="bi bi-send"></i> Simpan Kehadiran`;
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: 'Terima kasih, kunjungan Anda telah dicatat.',
+                confirmButtonColor: '#2563eb'
+            });
+            
+            // Jika admin sedang login, perbarui data di background
+            if (activeAdminPin !== "") {
+                fetchAdminData(activeAdminPin, false);
+            }
+        }
+
+        function handleError(err) {
+            endLoading();
+            const btnSubmit = document.getElementById('btnSubmit');
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = `<i class="bi bi-send"></i> Simpan Kehadiran`;
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'Terjadi kesalahan: ' + err,
+                confirmButtonColor: '#2563eb'
+            });
+        }
+
+        // ================= ADMIN LOGIN & DASHBOARD LOGIC =================
+        function processLogin(e) {
+            e.preventDefault();
+            const pin = document.getElementById('adminPin').value;
+            startLoading("Memvalidasi PIN...");
+
+            if (isSimulation) {
+                // SIMULATION MODE
+                setTimeout(() => {
+                    if (pin === DUMMY_PIN) {
+                        activeAdminPin = pin;
+                        document.getElementById('adminPin').value = '';
+                        db.guests = [...DUMMY_DB.guests];
+                        renderAdminUI();
+                        endLoading();
+                        switchView('view-admin');
+                        showToast('success', 'Login berhasil');
+                    } else {
+                        endLoading();
+                        Swal.fire('Akses Ditolak', 'PIN yang Anda masukkan salah (Gunakan 123456 untuk simulasi)', 'error');
+                    }
+                }, 800);
+            } else {
+                // PRODUCTION MODE
+                google.script.run
+                    .withSuccessHandler((res) => {
+                        endLoading();
+                        if (res.success) {
+                            activeAdminPin = pin;
+                            document.getElementById('adminPin').value = '';
+                            db.guests = res.data.guests;
+                            renderAdminUI();
+                            switchView('view-admin');
+                            showToast('success', 'Login berhasil');
+                        } else {
+                            Swal.fire('Akses Ditolak', res.message, 'error');
+                        }
+                    })
+                    .withFailureHandler((err) => {
+                        endLoading();
+                        Swal.fire('Error', 'Koneksi ke server gagal', 'error');
+                    })
+                    .login(pin);
+            }
+        }
+
+        function fetchAdminData(pin, showLoading = true) {
+            if(showLoading) startLoading("Mengambil data terbaru...");
+            
+            if (isSimulation) {
+                setTimeout(() => {
+                    db.guests = [...DUMMY_DB.guests];
+                    renderAdminUI();
+                    if(showLoading) endLoading();
+                }, 500);
+            } else {
+                google.script.run
+                    .withSuccessHandler((res) => {
+                        if (res.success) {
+                            db.guests = res.data.guests;
+                            renderAdminUI();
+                        }
+                        if(showLoading) endLoading();
+                    })
+                    .withFailureHandler((err) => {
+                        console.error(err);
+                        if(showLoading) endLoading();
+                    })
+                    .login(pin); // Re-authenticate and fetch
+            }
+        }
+
+        function refreshData() {
+            if (activeAdminPin !== "") {
+                fetchAdminData(activeAdminPin, true);
+            }
+        }
+
+        function logout() {
+            activeAdminPin = "";
+            db.guests = [];
+            switchView('view-guest');
+            showToast('info', 'Anda telah keluar dari Panel Admin');
+        }
+
+        // ================= RENDERING DATA =================
+        function renderAdminUI() {
+            const tbody = document.getElementById('tableBody');
+            const emptyState = document.getElementById('emptyState');
+            tbody.innerHTML = '';
+            
+            // Hitung Statistik
+            let todayCount = 0;
+            let kepsekCount = 0;
+            const todayDateStr = new Date().toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '/'); // Format dd/mm/yyyy
+
+            if (db.guests.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                
+                db.guests.forEach(item => {
+                    // Cek stats
+                    if (item.Timestamp && item.Timestamp.includes(todayDateStr)) {
+                        todayCount++;
+                    }
+                    if (item.Tujuan && item.Tujuan.toLowerCase().includes('kepala sekolah')) {
+                        kepsekCount++;
+                    }
+
+                    // Buat row
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition";
+                    
+                    tr.innerHTML = `
+                        <td class="p-4 align-top whitespace-nowrap">
+                            <span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-medium">${item.Timestamp.split(' ')[0]}</span><br>
+                            <span class="text-xs text-slate-500 mt-1 inline-block">${item.Timestamp.split(' ')[1] || ''}</span>
+                        </td>
+                        <td class="p-4 align-top">
+                            <div class="font-semibold text-slate-800">${item.Nama}</div>
+                            <div class="text-xs text-slate-500 mt-0.5"><i class="bi bi-telephone"></i> ${item.NoHP}</div>
+                        </td>
+                        <td class="p-4 align-top">
+                            <span class="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium border border-blue-100">${item.Instansi}</span>
+                        </td>
+                        <td class="p-4 align-top font-medium text-slate-700">
+                            ${item.Tujuan}
+                        </td>
+                        <td class="p-4 align-top text-slate-600 max-w-xs truncate" title="${item.Keperluan}">
+                            ${item.Keperluan}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // Update DOM Stats
+            document.getElementById('statTotal').innerText = db.guests.length;
+            document.getElementById('statToday').innerText = todayCount;
+            document.getElementById('statKepsek').innerText = kepsekCount;
+        }
+
+        // ================= SEARCH / FILTER =================
+        function searchTable() {
+            let input, filter, table, tr, td, i, txtValue;
+            input = document.getElementById("searchInput");
+            filter = input.value.toLowerCase();
+            table = document.getElementById("guestTable");
+            tr = table.getElementsByTagName("tr");
+
+            for (i = 1; i < tr.length; i++) { // Skip the header (index 0)
+                tr[i].style.display = "none"; // Hide by default
+                td = tr[i].getElementsByTagName("td");
+                for (let j = 1; j <= 2; j++) { // Search in Nama(1) and Instansi(2)
+                    if (td[j]) {
+                        txtValue = td[j].textContent || td[j].innerText;
+                        if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                            tr[i].style.display = "";
+                            break; // Stop checking other columns if found
+                        }
+                    }
+                }
+            }
+        }
+
+        // ================= EXPORT CSV =================
+        function exportToCSV() {
+            if (!db.guests || db.guests.length === 0) {
+                Swal.fire('Info', 'Tidak ada data untuk diekspor', 'info');
+                return;
+            }
+            
+            let csvContent = "data:text/csv;charset=utf-8,";
+            // Header Row
+            csvContent += "ID,Waktu,Nama Lengkap,Instansi/Asal,No HP,Tujuan,Keperluan\n";
+            
+            db.guests.forEach(row => {
+                // Bersihkan teks dari koma agar tidak merusak format CSV
+                let cleanData = [
+                    row.ID,
+                    row.Timestamp,
+                    row.Nama.replace(/,/g, ""),
+                    row.Instansi.replace(/,/g, ""),
+                    row.NoHP,
+                    row.Tujuan.replace(/,/g, ""),
+                    row.Keperluan.replace(/,/g, " ")
+                ];
+                
+                let rowString = cleanData.map(item => `"${item}"`).join(",");
+                csvContent += rowString + "\n";
+            });
+            
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Rekap_Tamu_SDN2MedangSari_${new Date().getTime()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast('success', 'File CSV berhasil diunduh');
+        }
+
+    </script>
+</body>
+</html>
